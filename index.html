@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Canvas with White Pen</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            background: black;
+            display: block;
+            cursor: crosshair;
+            flex-grow: 1;
+        }
+        .toolbar {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="drawingCanvas"></canvas>
+    <div class="toolbar">
+        <button onclick="setMode('draw')">Pen</button>
+        <button onclick="setMode('erase')">Eraser</button>
+        <button onclick="clearCanvas()">Clear</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("drawingCanvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        let erasing = false;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function setMode(mode) {
+            if (mode === 'draw') {
+                erasing = false;
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 3;
+            } else if (mode === 'erase') {
+                erasing = true;
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 20;
+            }
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.addEventListener("mousedown", () => { drawing = true; });
+        canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener("mousemove", draw);
+
+        function draw(event) {
+            if (!drawing) return;
+            ctx.lineCap = "round";
+            ctx.lineTo(event.clientX, event.clientY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(event.clientX, event.clientY);
+        }
+
+        setMode('draw'); // Default mode is pen
+    </script>
+</body>
+</html>
