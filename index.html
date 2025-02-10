@@ -36,20 +36,66 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
     <canvas id="drawingCanvas"></canvas>
     <div class="toolbar">
         <button onclick="setMode('draw')">Pen</button>
         <button onclick="setMode('erase')">Eraser</button>
         <button onclick="clearCanvas()">Clear</button>
+        <button onclick="undo()">Undo</button>
+        <button onclick="redo()">Redo</button>
     </div>
     <script>
         const canvas = document.getElementById("drawingCanvas");
         const ctx = canvas.getContext("2d");
         let drawing = false;
         let erasing = false;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        let history = [];
+        let redoStack = [];
+
+        function resizeCanvas() {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.drawImage(tempCanvas, 0, 0);
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+            redoStack = [];
+        }
+
+        function undo() {
+            if (history.length > 0) {
+                redoStack.push(canvas.toDataURL());
+                let img = new Image();
+                img.src = history.pop();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                history.push(canvas.toDataURL());
+                let img = new Image();
+                img.src = redoStack.pop();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
 
         function setMode(mode) {
             if (mode === 'draw') {
@@ -65,10 +111,18 @@
 
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            history = [];
+            redoStack = [];
         }
 
-        canvas.addEventListener("mousedown", () => { drawing = true; });
-        canvas.addEventListener("mouseup", () => { drawing = false; ctx.beginPath(); });
+        canvas.addEventListener("mousedown", () => { 
+            drawing = true;
+            saveState();
+        });
+        canvas.addEventListener("mouseup", () => { 
+            drawing = false; 
+            ctx.beginPath();
+        });
         canvas.addEventListener("mousemove", draw);
 
         function draw(event) {
